@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0017ac" />
+  <title>미니 야구</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- 음소거 토글 (전역) -->
+    <button class="sound-toggle" id="sound-toggle" aria-label="소리 켜기/끄기" title="소리">🔊</button>
+
+    <!-- 타이틀(표지) 화면 -->
+    <section class="screen screen--splash is-active" id="screen-splash">
+      <div class="splash-bg" aria-hidden="true">
+        <div class="splash-stars"></div>
+        <span class="splash-beam splash-beam--l"></span>
+        <span class="splash-beam splash-beam--r"></span>
+        <span class="splash-lamp splash-lamp--l"></span>
+        <span class="splash-lamp splash-lamp--r"></span>
+        <div class="splash-field"></div>
+        <div class="splash-plate"></div>
+      </div>
+
+      <div class="splash-top">
+        <div class="splash-ball">⚾<span class="splash-spark"></span></div>
+        <h1 class="splash-title">
+          <span class="splash-title__mini">MINI</span>
+          <span class="splash-title__main">BASEBALL</span>
+        </h1>
+        <div class="splash-sub"><i>★</i><span>탭 한 번으로 즐기는 야구</span><i>★</i></div>
+      </div>
+
+      <div class="splash-tap" id="splash-tap">
+        <span class="splash-chev">»</span>
+        <span class="splash-tap__txt">TAP TO START</span>
+        <span class="splash-chev">«</span>
+      </div>
+
+      <div class="splash-foot">
+        <div class="splash-best">
+          <span class="splash-crown">👑</span>
+          <b>BEST SCORE</b>
+          <span class="splash-best__val">🏆 <em id="splash-best">0</em></span>
+        </div>
+        <p class="splash-ver">Ver 1.0.0<br>© 2026 Mini Baseball. All Rights Reserved.</p>
+      </div>
+    </section>
+
+    <!-- 응원팀 선택 화면 -->
+    <section class="screen screen--team" id="screen-team">
+      <div class="team-head">
+        <h2 class="team-title">⚾ 응원팀 선택</h2>
+        <p class="team-sub">함께할 KBO 구단을 골라주세요</p>
+      </div>
+      <div class="team-grid" id="team-grid"><!-- JS 렌더 --></div>
+      <button class="btn btn--primary team-confirm" id="team-confirm" disabled>팀을 선택하세요</button>
+    </section>
+
+    <!-- 홈 화면 -->
+    <section class="screen screen--home" id="screen-home">
+      <div class="home-inner">
+        <div class="logo">
+          <span class="logo__mark">⚾</span>
+          <h1 class="logo__title">미니 야구</h1>
+          <p class="logo__sub">탭 한 번으로 즐기는 야구</p>
+          <button class="home-team" id="home-team">
+            <span class="home-team__dot" id="home-team-dot"></span>
+            <span class="home-team__name" id="home-team-name">팀 선택</span>
+            <small>변경</small>
+          </button>
+        </div>
+
+        <div class="mode-cards">
+          <button class="mode-card" data-mode="bat">
+            <span class="mode-card__icon">🏏</span>
+            <span class="mode-card__name">타자 모드</span>
+            <span class="mode-card__desc">날아오는 공을 노려서 친다</span>
+            <span class="mode-card__best" id="best-bat">최고 기록 —</span>
+          </button>
+          <button class="mode-card" data-mode="pitch">
+            <span class="mode-card__icon">🎯</span>
+            <span class="mode-card__name">투수 모드</span>
+            <span class="mode-card__desc">존을 골라 공을 던진다</span>
+            <span class="mode-card__best" id="best-pitch">최고 기록 —</span>
+          </button>
+          <button class="mode-card" data-mode="inning">
+            <span class="mode-card__icon">🏟️</span>
+            <span class="mode-card__name">이닝제 모드</span>
+            <span class="mode-card__desc">3회 동안 주자를 불러들여 최다 득점</span>
+            <span class="mode-card__best" id="best-inning">최고 기록 —</span>
+          </button>
+        </div>
+
+        <div class="difficulty">
+          <span class="difficulty__label">난이도</span>
+          <div class="difficulty__opts" id="difficulty" role="group" aria-label="난이도 선택">
+            <button class="diff-btn" data-diff="easy">쉬움</button>
+            <button class="diff-btn is-on" data-diff="normal">보통</button>
+            <button class="diff-btn" data-diff="hard">어려움</button>
+          </div>
+        </div>
+
+        <p class="home-foot">손동작(✋)으로도 플레이할 수 있어요 · 최고 기록에 도전</p>
+      </div>
+    </section>
+
+    <!-- 타자 모드 (몰입형 구장 뷰) -->
+    <section class="screen screen--bat" id="screen-bat">
+      <div class="bat-stage" id="bat-field">
+
+        <!-- 구장 배경 -->
+        <div class="stadium" aria-hidden="true">
+          <div class="stadium__sky"></div>
+          <div class="stadium__stands"></div>
+          <div class="stadium__board"><span>B</span></div>
+          <div class="stadium__grass"></div>
+          <div class="stadium__dirt"></div>
+          <div class="stadium__plate"></div>
+          <div class="stadium__box stadium__box--l"></div>
+          <div class="stadium__box stadium__box--r"></div>
+          <div class="catcher"></div>
+          <div class="pitcher"></div>
+        </div>
+
+        <!-- 3x3 존 그리드 (터치 타격) -->
+        <div class="zonegrid" id="bat-zonegrid">
+          <button class="zonecell" data-cell="0" aria-label="존 1"></button>
+          <button class="zonecell" data-cell="1" aria-label="존 2"></button>
+          <button class="zonecell" data-cell="2" aria-label="존 3"></button>
+          <button class="zonecell" data-cell="3" aria-label="존 4"></button>
+          <button class="zonecell" data-cell="4" aria-label="존 5"></button>
+          <button class="zonecell" data-cell="5" aria-label="존 6"></button>
+          <button class="zonecell" data-cell="6" aria-label="존 7"></button>
+          <button class="zonecell" data-cell="7" aria-label="존 8"></button>
+          <button class="zonecell" data-cell="8" aria-label="존 9"></button>
+        </div>
+
+        <!-- 타이밍/공/효과 -->
+        <div class="field__flash" id="bat-flash" aria-hidden="true"></div>
+        <div class="zone-ring" id="bat-zone"></div>
+        <div class="ball" id="bat-ball"></div>
+        <div class="combo-badge" id="bat-combo" hidden></div>
+        <div class="result-pop" id="bat-pop"></div>
+
+        <!-- 상단 HUD -->
+        <header class="hud">
+          <div class="hud__grp">
+            <div class="hud__stat"><span>SCORE</span><b id="bat-score">0</b></div>
+            <div class="hud__stat"><span>BEST</span><b id="bat-best">0</b></div>
+            <div class="hud__stat hud__stat--pitch"><span>PITCH</span><b><i id="bat-pitch-no">1</i><em>/9</em></b></div>
+          </div>
+          <div class="hud__grp hud__grp--right">
+            <div class="hud__out">
+              <span>OUT</span>
+              <div class="out-dots"><i></i><i></i><i></i></div>
+            </div>
+            <button class="hud__pause" data-back aria-label="홈으로">❚❚</button>
+          </div>
+        </header>
+
+        <!-- 좌: 미션 패널 -->
+        <aside class="side side--left" id="bat-mission">
+          <div class="side__icon">⚾</div>
+          <div class="side__label">MISSION</div>
+          <p class="side__text">안타를 3개<br>기록하세요</p>
+          <div class="mission__count"><b id="bat-mission-count">0</b> / 3</div>
+          <div class="mission__bar"><span id="bat-mission-fill"></span></div>
+        </aside>
+
+        <!-- 우: 스윙 패널 -->
+        <aside class="side side--right">
+          <div class="side__icon">🏏</div>
+          <div class="side__label">SWING</div>
+          <p class="side__text">공이 오는 칸을<br>타이밍 맞춰 터치</p>
+          <div class="swingfb" id="bat-feedback"><i></i><i></i><i></i></div>
+        </aside>
+
+        <!-- 중앙 하단 안내 -->
+        <p class="stage-hint" id="bat-hint">화면을 탭하면 시작 · 9구 자동 진행</p>
+
+        <!-- 숨김: JS 상태 미러 -->
+        <span id="bat-hits" hidden>0</span>
+        <span id="bat-hr" hidden>0</span>
+        <span id="bat-outs" hidden>0</span>
+
+        <!-- 중앙 시작/결과 버튼 (그리드 바로 아래) -->
+        <button class="start-btn" id="bat-action">▶ 플레이 시작</button>
+      </div>
+    </section>
+
+    <!-- 투수 모드 (몰입형 마운드 뷰) -->
+    <section class="screen screen--pitch" id="screen-pitch">
+      <div class="pit-stage" id="pitch-field">
+
+        <!-- 구장 배경 (투수 시점) -->
+        <div class="stadium" aria-hidden="true">
+          <div class="stadium__sky"></div>
+          <div class="stadium__stands"></div>
+          <div class="stadium__board"><span>B</span></div>
+          <div class="stadium__grass"></div>
+          <div class="pit-infield"></div>
+          <div class="pit-plate"></div>
+          <div class="pit-umpire"></div>
+          <div class="pit-catcher"></div>
+          <div class="pit-batter"></div>
+          <div class="pit-mound"></div>
+          <div class="pit-arm"><span class="pit-ball"></span></div>
+        </div>
+
+        <div class="field__flash" id="pitch-flash" aria-hidden="true"></div>
+
+        <!-- 3x3 존 — 선택하여 투구 -->
+        <div class="abs" id="abs-grid">
+          <button class="abs__cell" data-cell="0"><span>1</span></button>
+          <button class="abs__cell" data-cell="1"><span>2</span></button>
+          <button class="abs__cell" data-cell="2"><span>3</span></button>
+          <button class="abs__cell" data-cell="3"><span>4</span></button>
+          <button class="abs__cell" data-cell="4"><span>5</span></button>
+          <button class="abs__cell" data-cell="5"><span>6</span></button>
+          <button class="abs__cell" data-cell="6"><span>7</span></button>
+          <button class="abs__cell" data-cell="7"><span>8</span></button>
+          <button class="abs__cell" data-cell="8"><span>9</span></button>
+        </div>
+
+        <div class="combo-badge" id="pitch-combo" hidden></div>
+        <div class="result-pop" id="pitch-pop"></div>
+
+        <!-- 상단 HUD -->
+        <header class="hud">
+          <div class="hud__grp">
+            <div class="hud__stat"><span>SCORE</span><b id="pitch-score">0</b></div>
+            <div class="hud__stat"><span>BEST</span><b id="pitch-best">0</b></div>
+          </div>
+          <div class="hud__grp hud__grp--right">
+            <div class="hud__out">
+              <span>OUT</span>
+              <div class="out-dots" id="pitch-out-dots"><i></i><i></i><i></i></div>
+            </div>
+            <button class="hud__pause" data-back aria-label="홈으로">❚❚</button>
+          </div>
+        </header>
+
+        <!-- 좌상: 투구 정보 -->
+        <aside class="side side--left pit-info">
+          <div class="side__label">투구 정보</div>
+          <div class="pit-row"><span>구종</span><b id="pitch-type">직구</b></div>
+          <div class="pit-row"><span>구속</span><b id="pitch-speed">145 km/h</b></div>
+          <div class="pit-row"><span>제구</span><b id="pitch-control">좋음</b></div>
+        </aside>
+
+        <!-- 좌하: 남은 기회 / 점수 -->
+        <aside class="side side--left pit-count">
+          <div class="side__label">남은 기회</div>
+          <div class="pit-big"><b id="pitch-left">9</b> / 9</div>
+          <div class="side__label pit-count__score">점수</div>
+          <div class="pit-big pit-big--score" id="pitch-score2">0</div>
+        </aside>
+
+        <!-- 우상: MISSION -->
+        <aside class="side side--right pit-mission" id="pitch-mission">
+          <div class="side__label">MISSION</div>
+          <p class="side__text">삼진 3개를<br>잡으세요</p>
+          <div class="mission__count"><b id="pitch-mission-count">0</b> / 3</div>
+          <div class="mission__bar"><span id="pitch-mission-fill"></span></div>
+        </aside>
+
+        <!-- 우하: 투구 가이드 -->
+        <aside class="side side--right pit-guide">
+          <div class="side__label">투구 가이드</div>
+          <div class="pit-guide__grid">
+            <span>1</span><span>2</span><span>3</span>
+            <span>4</span><span>5</span><span>6</span>
+            <span>7</span><span>8</span><span>9</span>
+          </div>
+        </aside>
+
+        <!-- 중앙 하단 안내 -->
+        <p class="stage-hint" id="pitch-hint">존을 선택하여 투구하세요</p>
+
+        <!-- 숨김: JS 상태 미러 -->
+        <span id="pitch-no" hidden>1</span>
+        <span id="pitch-k" hidden>0</span>
+        <span id="pitch-outs" hidden>0</span>
+        <span id="pitch-hits" hidden>0</span>
+        <span id="pitch-runs" hidden>0</span>
+
+        <!-- 구종 변경 (좌하단) -->
+        <button class="pit-type-btn" id="pitch-type-btn"><b>⚾</b><span>구종 변경</span></button>
+
+        <!-- 결과 보기 (중앙, 종료 시) -->
+        <button class="start-btn" id="pitch-reset" hidden>결과 보기</button>
+      </div>
+    </section>
+
+    <!-- 이닝제 모드 (몰입형 구장 뷰) -->
+    <section class="screen screen--inning" id="screen-inning">
+      <div class="bat-stage" id="inn-field">
+
+        <!-- 구장 배경 -->
+        <div class="stadium" aria-hidden="true">
+          <div class="stadium__sky"></div>
+          <div class="stadium__stands"></div>
+          <div class="stadium__board"><span>B</span></div>
+          <div class="stadium__grass"></div>
+          <div class="stadium__dirt"></div>
+          <div class="stadium__plate"></div>
+          <div class="stadium__box stadium__box--l"></div>
+          <div class="stadium__box stadium__box--r"></div>
+          <div class="catcher"></div>
+          <div class="pitcher"></div>
+        </div>
+
+        <div class="zonegrid" aria-hidden="true">
+          <span></span><span></span><span></span>
+          <span></span><span></span><span></span>
+          <span></span><span></span><span></span>
+        </div>
+
+        <div class="field__flash" id="inn-flash" aria-hidden="true"></div>
+        <div class="zone-ring" id="inn-zone"></div>
+        <div class="ball" id="inn-ball"></div>
+        <div class="combo-badge" id="inn-combo" hidden></div>
+        <div class="result-pop" id="inn-pop"></div>
+
+        <!-- 상단 HUD -->
+        <header class="hud">
+          <div class="hud__grp">
+            <div class="hud__stat"><span>득점</span><b id="inn-runs">0</b></div>
+            <div class="hud__stat"><span>안타</span><b id="inn-hits">0</b></div>
+            <div class="hud__stat hud__stat--pitch"><span>이닝</span><b><i id="inn-inning">1</i><em>/3</em></b></div>
+          </div>
+          <div class="hud__grp hud__grp--right">
+            <div class="hud__out">
+              <span>OUT</span>
+              <div class="out-dots" id="inn-outs-dots"><i></i><i></i><i></i></div>
+            </div>
+            <button class="hud__pause" data-back aria-label="홈으로">❚❚</button>
+          </div>
+        </header>
+
+        <!-- 좌: 주자 베이스 -->
+        <aside class="side side--left inn-bases">
+          <div class="side__label">주자 · BASES</div>
+          <div class="inn-diamond">
+            <span class="base base--2" id="inn-b2"></span>
+            <span class="base base--3" id="inn-b3"></span>
+            <span class="base base--1" id="inn-b1"></span>
+            <span class="base base--home"></span>
+          </div>
+        </aside>
+
+        <!-- 우: SWING 안내 -->
+        <aside class="side side--right">
+          <div class="side__icon">🏏</div>
+          <div class="side__label">SWING</div>
+          <p class="side__text">공이 올 때<br>타이밍 맞춰 탭</p>
+        </aside>
+
+        <!-- 중앙 하단 안내 -->
+        <p class="stage-hint" id="inn-hint">화면을 탭하면 시작 · 자동 진행</p>
+
+        <!-- 숨김: JS 상태 미러 -->
+        <span id="inn-no" hidden>1</span>
+        <span id="inn-outs" hidden>0</span>
+
+        <!-- 중앙 시작/결과 버튼 -->
+        <button class="start-btn" id="inn-action">▶ 경기 시작</button>
+      </div>
+    </section>
+
+    <!-- 결과 화면 -->
+    <section class="screen screen--over" id="screen-over">
+      <div class="over-inner">
+        <h2 class="over__title" id="over-title">경기 종료</h2>
+        <div class="over__card" id="over-summary"></div>
+        <div class="over__btns">
+          <button class="btn btn--primary" id="over-replay">한 번 더</button>
+          <button class="btn btn--ghost" data-back>홈으로</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <script src="script.js"></script>
+  <script type="module" src="gesture.js"></script>
+</body>
+</html>
